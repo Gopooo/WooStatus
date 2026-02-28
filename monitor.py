@@ -14,12 +14,11 @@ def check_videos():
         return None
     
     with open(FILE_PATH, 'r') as f:
-        # On nettoie les liens (on enlève les espaces et les lignes vides)
         urls = [line.strip() for line in f if line.strip().startswith('http')]
 
-    print(f"Scanning {len(urls)} links...")
+    total_links = len(urls)
+    print(f"Scanning {total_links} links...")
     
-    # Configuration pour éviter les blocs de YouTube
     ydl_opts = {
         'quiet': True, 
         'no_warnings': True, 
@@ -32,38 +31,35 @@ def check_videos():
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         for url in urls:
             try:
-                # On tente de récupérer les infos sans télécharger
                 ydl.extract_info(url, download=False)
                 print(f"✅ Active: {url}")
             except Exception as e:
                 error_msg = str(e).lower()
-                # On vérifie si le message contient les mots-clés de suppression
                 if any(word in error_msg for word in ["unavailable", "private", "removed", "deleted"]):
                     print(f"❌ Dead: {url}")
                     dead_links.append(url)
                 else:
-                    # En cas de blocage IP ou bot detection, on ne compte pas comme "dead"
                     print(f"⚠️ Blocked/Unknown: {url}")
             
-            # Pause de 1.5s pour rester discret vis-à-vis de YouTube
             time.sleep(1.5)
             
-    return dead_links
+    return dead_links, total_links
 
 def send_to_discord(msg):
     if DISCORD_WEBHOOK:
-        # Discord limite à 2000 caractères par message
         if len(msg) > 2000:
             msg = msg[:1990] + "..."
         requests.post(DISCORD_WEBHOOK, json={"content": msg})
 
 # Execution
-dead_results = check_videos()
+dead_results, total_count = check_videos()
 
 if dead_results:
-    # Ping everyone + Titre personnalisé
-    header = f"@everyone 💫 **Woo Report** 💫\nFound **{len(dead_results)}** verified dead link(s) in the list:\n\n"
+    # Rapport s'il y a des morts
+    header = f"@everyone 💫 **Woo Report** 💫\nFound **{len(dead_results)}** dead link(s) out of **{total_count}**:\n\n"
     report = header + "\n".join(dead_results)
     send_to_discord(report)
 else:
-    print("All links are active. Woo is safe.")
+    # Nouveau : Rapport si TOUT est OK (On ne ping pas @everyone ici pour ne pas déranger inutilement)
+    success_report = f"✅ **Woo Report** ✅\nAll **{total_count}** videos are online. Everything is safe! 🔥"
+    send_to_discord(success_report)
