@@ -10,14 +10,16 @@ FILE_PATH = 'urls.txt'
 def check_videos():
     dead_links = []
     if not os.path.exists(FILE_PATH):
+        print(f"Error: {FILE_PATH} not found.")
         return None
     
     with open(FILE_PATH, 'r') as f:
+        # On nettoie les liens (on enlève les espaces et les lignes vides)
         urls = [line.strip() for line in f if line.strip().startswith('http')]
 
     print(f"Scanning {len(urls)} links...")
     
-    # Configuration pour paraître "humain"
+    # Configuration pour éviter les blocs de YouTube
     ydl_opts = {
         'quiet': True, 
         'no_warnings': True, 
@@ -30,27 +32,27 @@ def check_videos():
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         for url in urls:
             try:
-                # On essaie juste de récupérer les infos de base
+                # On tente de récupérer les infos sans télécharger
                 ydl.extract_info(url, download=False)
                 print(f"✅ Active: {url}")
             except Exception as e:
-                # On ne marque comme mort que si c'est vraiment une erreur de vidéo supprimée/privée
-                error_msg = str(e)
-                if "Video unavailable" in error_msg or "private" in error_msg or "removed" in error_msg:
+                error_msg = str(e).lower()
+                # On vérifie si le message contient les mots-clés de suppression
+                if any(word in error_msg for word in ["unavailable", "private", "removed", "deleted"]):
                     print(f"❌ Dead: {url}")
                     dead_links.append(url)
                 else:
-                    # Si c'est un blocage de YouTube (Sign in, Bot detection), on ignore pour l'instant
+                    # En cas de blocage IP ou bot detection, on ne compte pas comme "dead"
                     print(f"⚠️ Blocked/Unknown: {url}")
             
-            # Petite pause pour ne pas se faire bannir par YouTube
-            time.sleep(1)
+            # Pause de 1.5s pour rester discret vis-à-vis de YouTube
+            time.sleep(1.5)
             
     return dead_links
 
 def send_to_discord(msg):
     if DISCORD_WEBHOOK:
-        # On découpe le message si trop long
+        # Discord limite à 2000 caractères par message
         if len(msg) > 2000:
             msg = msg[:1990] + "..."
         requests.post(DISCORD_WEBHOOK, json={"content": msg})
@@ -59,8 +61,9 @@ def send_to_discord(msg):
 dead_results = check_videos()
 
 if dead_results:
-    report = f"⚠️ **YouTube Health Report** ⚠️\nFound **{len(dead_results)}** verified dead link(s):\n\n"
-    report += "\n".join(dead_results)
+    # Ping everyone + Titre personnalisé
+    header = f"@everyone 💫 **Woo Report** 💫\nFound **{len(dead_results)}** verified dead link(s) in the list:\n\n"
+    report = header + "\n".join(dead_results)
     send_to_discord(report)
 else:
-    print("No dead links confirmed.")
+    print("All links are active. Woo is safe.")
