@@ -63,5 +63,6 @@ if dead_results:
     send_to_discord(report)
 else:
     # Ton message personnalisé "Woo Hero" avec les emojis
-    success_msg = "Woo Hero reporting for duty! Everything is safe. My job is to stalk links 24/7 under Cassius' basement to make sure they are still up and running 🏃. Hopefully I don't have to ping @everyone bc if so that means something got deleted 🙁"
+    success_msg = "Woo Hero reporting for duty! Everything is safe. My job is to stalk links 24/7 under Cassius' basement to make sure they are still up and running 🏃. Hopefully I don't have to ping everyone bc if so that means something got deleted 🙁"
     send_to_discord(success_msg)
+
