@@ -68,4 +68,6 @@ if dead_results:
 elif skipped > (total_count / 2):
     send_to_discord(f"⚠️ **Woo Report** ⚠️\nLe scan a été perturbé par YouTube. Résultat incomplet.")
 else:
-    send_to_discord(f"✅ **Woo Report** ✅\nAll **{total_count}** videos are online. Everything is safe! 🔥")
+    # Ton nouveau message personnalisé ici
+    success_msg = "Woo Hero reporting for duty! Everything is safe. My job is to stalk links 24/7 under Cassius' basement to make sure they are still up and running. Hopefully I don't have to ping @/everyone bc if so that means something got deleted"
+    send_to_discord(success_msg)
